@@ -1,21 +1,26 @@
 import grpc
 from concurrent import futures
-import os # For environment variables
-import psycopg # Or import psycopg2
+import os
+import psycopg
 import review_pb2
 import review_pb2_grpc
-import book_pb2
-import book_pb2_grpc
+import bookstore_pb2
+import bookstore_pb2_grpc
 
-# Use a single DATABASE_URL environment variable
-DATABASE_URL = os.getenv(DATABASE_URI)
+from dotenv import load_dotenv
+
+load_dotenv(".env")
+
+DATABASE_URL = os.getenv("DATABASE_URI")
+APP_PORT = os.getenv("APP_PORT")
+BOOK_CHANNEL_URI = "localhost:50051"
+
 
 class ReviewService(review_pb2_grpc.ReviewServiceServicer):
     def __init__(self):
         
-        self.book_channel = grpc.insecure_channel('localhost:50051')
-        self.book_stub = book_pb2_grpc.BookServiceStub(self.book_channel)
-
+        self.book_channel = grpc.insecure_channel(BOOK_CHANNEL_URI)
+        self.book_stub = bookstore_pb2_grpc.BookstoreServiceStub(self.book_channel)
         
         if not DATABASE_URL:
              print("❌ DATABASE_URL environment variable not set.")
@@ -37,8 +42,8 @@ class ReviewService(review_pb2_grpc.ReviewServiceServicer):
             return review_pb2.ReviewResponse(status="Database connection error")
 
         try:
-            book_resp = self.book_stub.GetBook(book_pb2.GetBookRequest(book_id=request.book_id))
-            if not book_resp.exists:
+            book_resp = self.book_stub.GetBook(bookstore_pb2.BookRequest(book_id=request.book_id))
+            if not book_resp:
                 context.set_code(grpc.StatusCode.NOT_FOUND)
                 context.set_details("Livro não encontrado")
                 return review_pb2.ReviewResponse(status="Livro não encontrado")
@@ -98,9 +103,9 @@ def serve():
     service = ReviewService() 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     review_pb2_grpc.add_ReviewServiceServicer_to_server(service, server)
-    server.add_insecure_port('[::]:50052')
+    server.add_insecure_port(f'[::]:{APP_PORT}')
     server.start()
-    print("Review Service rodando em localhost:50052")
+    print(f"Review Service rodando em localhost:{APP_PORT}")
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:

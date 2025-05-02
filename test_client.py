@@ -1,10 +1,13 @@
+import os
 import grpc
 import review_pb2
 import review_pb2_grpc
 
+APP_PORT = os.getenv("APP_PORT")
+
 def enviar_avaliacao(stub):
     review_request = review_pb2.AddReviewRequest(
-        book_id=1,
+        book_id=8,
         rating=5,
         comment="Excelente leitura!"
     )
@@ -29,12 +32,11 @@ def listar_avaliacoes(stub, book_id):
         print(f"❌ Erro ao consultar avaliações: {e.details()} (código: {e.code()})")
 
 def run():
-    channel = grpc.insecure_channel('localhost:50052')
+    channel = grpc.insecure_channel(f'localhost:{APP_PORT}')
     stub = review_pb2_grpc.ReviewServiceStub(channel)
 
     enviar_avaliacao(stub)
-    listar_avaliacoes(stub, book_id=1)
-    listar_avaliacoes(stub, book_id=99)
+    listar_avaliacoes(stub, book_id=8)
 
 if __name__ == '__main__':
     run()
