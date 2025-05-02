@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package review;
+
+service ReviewService {
+  rpc AddReview(AddReviewRequest) returns (ReviewResponse);
+  rpc GetReviews(GetReviewsRequest) returns (ReviewList);
+}
+
+// Mensagem para adicionar uma nova avaliação
+message AddReviewRequest {
+  int32 book_id = 1;
+  int32 rating = 2;           // nota da avaliação (ex: de 1 a 5)
+  string comment = 3;         // comentário da avaliação
+}
+
+// Resposta ao adicionar uma avaliação
+message ReviewResponse {
+  string status = 1;          // ex: "Avaliação registrada", ou erro
+}
+
+// Requisição para buscar avaliações de um livro específico
+message GetReviewsRequest {
+  int32 book_id = 1;
+}
+
+// Representa uma única avaliação
+message Review {
+  int32 book_id = 1;
+  int32 rating = 2;
+  string comment = 3;
+}
+
+// Lista de avaliações
+message ReviewList {
+  repeated Review reviews = 1;
+}
